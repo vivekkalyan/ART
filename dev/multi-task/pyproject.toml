@@ -4,7 +4,15 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
   "openpipe-art",
+  "art-e",
 ]
 
 [tool.uv.sources]
 openpipe-art = { path = "../../", editable = true }
+art-e = { path = "../../examples/art-e/", editable = true }
+
+[tool.uv]
+override-dependencies = [
+    "bitsandbytes==0.46.1; sys_platform == 'linux'",
+    "xformers; sys_platform == 'linux'",
+]
