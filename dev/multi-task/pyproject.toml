@@ -5,11 +5,13 @@ requires-python = ">=3.11"
 dependencies = [
   "openpipe-art",
   "art-e",
+  "tau-bench",
 ]
 
 [tool.uv.sources]
 openpipe-art = { path = "../../", editable = true }
 art-e = { path = "../../examples/art-e/", editable = true }
+tau-bench = { path = "../tau-bench/", editable = true }
 
 [tool.uv]
 override-dependencies = [
