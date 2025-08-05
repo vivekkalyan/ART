@@ -1,7 +1,8 @@
 from typing import List, Generator, TypeVar, Generic
 import art
 
-TScenario = TypeVar('TScenario')
+TScenario = TypeVar("TScenario")
+
 
 class Task(Generic[TScenario]):
     def __init__(self, name: str):
@@ -16,14 +17,11 @@ class Task(Generic[TScenario]):
         raise NotImplementedError
 
     async def run(
-        self, 
-        model: art.Model, 
-        scenario: TScenario,
-        num_samples: int = 1
+        self, model: art.Model, scenario: TScenario, num_samples: int = 1
     ) -> List[art.Trajectory]:
         """
         Run model on scenarios and return trajectories with rewards.
-        
+
         - Can be single scenario -> single trajectory (just loop internally)
         - Can be batch of scenarios -> batch of trajectories
         - Can evaluate rewards immediately or use LLM judge on the batch
