@@ -24,6 +24,13 @@ class Task(Generic[TScenario]):
         """
         raise NotImplementedError
 
+    def pre_train(self):
+        """
+        Hook that is called before training
+        Useful for setting up databases etc.
+        """
+        pass
+
     async def run(
         self, model: art.Model, scenario: TScenario, num_samples: int = 1
     ) -> List[art.Trajectory]:

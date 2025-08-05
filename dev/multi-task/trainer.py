@@ -80,6 +80,8 @@ class TaskTrainer:
         print(f"Starting single-task training on {task.name}")
         config = self.task_configs[task.name]
 
+        task.pre_train()
+
         with LocalBackend() as backend:
             await self.model.register(backend)
 
