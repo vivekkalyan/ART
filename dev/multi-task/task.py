@@ -1,5 +1,6 @@
 from typing import List, Generator, TypeVar, Generic
 import art
+from config import TaskTrainConfig
 
 TScenario = TypeVar("TScenario")
 
@@ -7,6 +8,13 @@ TScenario = TypeVar("TScenario")
 class Task(Generic[TScenario]):
     def __init__(self, name: str):
         self.name = name
+
+    def get_default_config(self) -> TaskTrainConfig:
+        """
+        Returns the default training config for this task.
+        Subclasses should override this to provide task-specific defaults.
+        """
+        return TaskTrainConfig()  # Base defaults
 
     def get_dataset(self, split: str) -> Generator[TScenario, None, None]:
         """
