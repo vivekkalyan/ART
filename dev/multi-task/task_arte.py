@@ -4,6 +4,7 @@ from task import Task
 from config import TaskTrainConfig
 from art_e.data.types_enron import SyntheticQuery
 from art_e.data.query_iterators import load_synthetic_queries
+from art_e.data.local_email_db import generate_database
 from art_e.rollout import rollout
 from art import Trajectory
 
@@ -48,6 +49,9 @@ class TaskArtE(Task[SyntheticQuery]):
 
         # Load queries from the art_e dataset - yields SyntheticQuery objects directly
         yield from load_synthetic_queries(split=split)
+
+    def pre_train(self):
+        generate_database()
 
     async def run(
         self, model: art.Model, scenario: SyntheticQuery, num_samples: int = 1
