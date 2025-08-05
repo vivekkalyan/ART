@@ -187,12 +187,13 @@ class TaskTrainer:
     ) -> List[art.TrajectoryGroup]:
         """Generate trajectory groups for a batch of scenarios."""
 
-        # Generate trajectory groups
+        # Generate trajectory groups by awaiting each task.run() call
+        async def create_trajectory_group(scenario):
+            trajectories = await task.run(self.model, scenario, config.trajectories_per_group)
+            return art.TrajectoryGroup(trajectories)
+
         groups = await art.gather_trajectory_groups(
-            art.TrajectoryGroup(
-                task.run(self.model, scenario, config.trajectories_per_group)
-            )
-            for scenario in scenarios
+            create_trajectory_group(scenario) for scenario in scenarios
         )
 
         # Filter out None groups (failed judgments)
