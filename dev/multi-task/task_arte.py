@@ -6,7 +6,6 @@ from art_e.data.query_iterators import load_synthetic_queries
 from art_e.rollout import rollout
 from art_e.project_types import ProjectPolicyConfig
 from art import Trajectory
-import asyncio
 
 
 class TaskArtE(Task[SyntheticQuery]):
@@ -59,7 +58,12 @@ if __name__ == "__main__":
     # Create task instance
     task = TaskArtE()
 
-    # Get a sample scenario
-    dataset = task.get_dataset("test")
-    scenario = next(dataset)
-    print(scenario)
+    # Get a sample scenario from different splits
+    for split in ["train", "test"]:
+        try:
+            dataset = task.get_dataset(split)
+            scenario = next(dataset)
+            print(f"\n{split.upper()} split:")
+            print(scenario)
+        except Exception as e:
+            print(f"\n{split.upper()} split: Not available or error - {e}")
