@@ -6,6 +6,8 @@ dependencies = [
   "openpipe-art",
   "art-e",
   "tau-bench",
+  "python-dotenv>=1.1.1",
+  "skypilot[runpod]>=0.9.3",
 ]
 
 [tool.uv.sources]
