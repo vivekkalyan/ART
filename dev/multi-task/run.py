@@ -23,6 +23,7 @@ from typing import Dict, Optional
 from task_arte import TaskArtE
 from task_tau_retail import TaskTauRetail
 from task_tau_airline import TaskTauAirline
+from task_summary import TaskSummary
 
 from trainer import TaskTrainer
 from config import TaskTrainConfig, TrainerConfig
@@ -36,6 +37,7 @@ AVAILABLE_TASKS = {
     "arte": TaskArtE,
     "tau-retail": TaskTauRetail,
     "tau-airline": TaskTauAirline,
+    "summary": TaskSummary,
 }
 
 
@@ -154,10 +156,11 @@ def launch_skypilot_training(args):
         source $HOME/.local/bin/env
         
         # Install dependencies
-        uv remove openpipe-art art-e tau-bench 2>/dev/null || true
+        uv remove openpipe-art art-e tau-bench summarizer-rl 2>/dev/null || true
         uv add --editable ~/ART --extra backend --extra plotting
         uv add --editable ~/ART/examples/art-e
         uv add --editable ~/ART/dev/tau-bench
+        uv add --editable ~/ART/examples/Summary-RL
         uv add --extra runpod .
         uv sync
         
@@ -168,10 +171,11 @@ def launch_skypilot_training(args):
     
     run_script = textwrap.dedent(f"""
         # Refresh dependencies and ensure proper setup
-        uv remove openpipe-art art-e tau-bench 2>/dev/null || true
+        uv remove openpipe-art art-e tau-bench summarizer-rl 2>/dev/null || true
         uv add --editable ~/ART --extra backend --extra plotting
         uv add --editable ~/ART/examples/art-e
         uv add --editable ~/ART/dev/tau-bench
+        uv add --editable ~/ART/examples/Summary-RL
         
         # Ensure symlink exists for import compatibility
         ln -sf ~/ART/dev/tau-bench ./tau-bench
@@ -181,6 +185,8 @@ def launch_skypilot_training(args):
         python -c "import sys; print('\\n'.join(sys.path))"
         echo "Tau-bench directory contents:"
         ls -la ~/ART/dev/tau-bench/ | head -10
+        echo "Summary-RL directory contents:"
+        ls -la ~/ART/examples/Summary-RL/ | head -10
         echo "Current directory contents:"
         ls -la .
         
