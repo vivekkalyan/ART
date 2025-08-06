@@ -7,9 +7,24 @@ from tau_bench.types import Task as TauTask, TauBenchPolicyConfig, RunConfig
 import sys
 import os
 
-# Add the parent directory to the path to import from run_rl
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "tau-bench"))
-from run_rl import rollout_tau_bench_task
+# Add the tau-bench directory to the path to import from run_rl
+tau_bench_path = os.path.join(os.path.dirname(__file__), "..", "tau-bench")
+if not os.path.exists(tau_bench_path):
+    # Try absolute path if relative doesn't work
+    tau_bench_path = "/root/ART/dev/tau-bench"
+sys.path.insert(0, tau_bench_path)
+
+try:
+    from run_rl import rollout_tau_bench_task
+except ImportError:
+    # Fallback: try importing from current working directory
+    import importlib.util
+
+    run_rl_path = os.path.join(tau_bench_path, "run_rl.py")
+    spec = importlib.util.spec_from_file_location("run_rl", run_rl_path)
+    run_rl = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(run_rl)
+    rollout_tau_bench_task = run_rl.rollout_tau_bench_task
 
 
 class TaskTauRetail(Task[TauTask]):
