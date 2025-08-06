@@ -1,0 +1,7 @@
+__pycache__/
+.venv/
+.python-version
+data/
+.art/
+
+.env
