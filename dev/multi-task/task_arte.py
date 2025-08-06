@@ -30,13 +30,13 @@ class TaskArtE(Task[SyntheticQuery]):
             # fork_not_after_step: int | None = None
             # # Validation configuration
             # num_validation_runs: int = 1  # Number of times to run each validation entry
-            trajectories_per_group=6,
-            groups_per_step=8,
+            trajectories_per_group=4,
+            groups_per_step=12,
             learning_rate=1.2e-5,
             eval_steps=30,
             val_set_size=100,
             training_dataset_size=4000,
-            num_epochs=4,
+            num_epochs=3,
             scale_rewards=True,
             importance_sampling_level="token",
             minimum_reward_std_dev=0.0,
