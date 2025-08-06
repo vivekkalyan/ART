@@ -33,13 +33,16 @@ class Task(Generic[TScenario]):
 
     async def run(
         self, model: art.Model, scenario: TScenario, num_samples: int = 1
-    ) -> List[art.Trajectory]:
+    ) -> art.TrajectoryGroup:
         """
-        Run model on scenarios and return trajectories with rewards.
+        Run model on scenarios and return a trajectory group with rewards.
 
-        - Can be single scenario -> single trajectory (just loop internally)
-        - Can be batch of scenarios -> batch of trajectories
-        - Can evaluate rewards immediately or use LLM judge on the batch
+        This method should generate num_samples trajectories for the given scenario
+        and return them as a TrajectoryGroup. This allows tasks to do group-level
+        processing like group judging, reward normalization, etc.
+
+        - Can evaluate rewards immediately or use LLM judge on the group
         - Can be single-turn or multi-turn
+        - Should use parallel execution for efficiency
         """
         raise NotImplementedError

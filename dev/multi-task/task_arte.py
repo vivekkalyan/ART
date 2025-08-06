@@ -1,12 +1,13 @@
+import asyncio
 from typing import List, Generator
 import art
+from pydantic import BaseModel
 from task import Task
 from config import TaskTrainConfig
 from art_e.data.types_enron import SyntheticQuery
 from art_e.data.query_iterators import load_synthetic_queries
 from art_e.data.local_email_db import generate_database
 from art_e.rollout import rollout
-from art import Trajectory
 
 
 class TaskArtE(Task[SyntheticQuery]):
@@ -30,7 +31,7 @@ class TaskArtE(Task[SyntheticQuery]):
             # # Validation configuration
             # num_validation_runs: int = 1  # Number of times to run each validation entry
             trajectories_per_group=6,
-            groups_per_step=1,
+            groups_per_step=8,
             learning_rate=1.2e-5,
             eval_steps=30,
             val_set_size=100,
@@ -55,33 +56,22 @@ class TaskArtE(Task[SyntheticQuery]):
 
     async def run(
         self, model: art.Model, scenario: SyntheticQuery, num_samples: int = 1
-    ) -> List[art.Trajectory]:
-        """
-        Run model on email search scenarios and return trajectories with rewards.
-        Uses the existing rollout function from art_e.
-        """
-        trajectories = []
+    ) -> art.TrajectoryGroup:
 
-        for _ in range(num_samples):
-            try:
-                traj = await rollout(model, scenario)
+        class TaskProjectConfig(BaseModel):
+            max_turns: int = 10
+            max_tokens: int = 2048
+            log_to_openpipe: bool = False
+            stupid_simple_reward_fn: bool = False
+            include_qwen3_nothink: bool = False
+            ruler_judge_model: str | None = None
+            messages_only: bool = False
 
-                trajectories.append(traj)
+        model.config = TaskProjectConfig()
 
-            except Exception as e:
-                # If rollout fails, create a failed trajectory
-                failed_traj = Trajectory(
-                    messages_and_choices=[
-                        {"role": "system", "content": "Task failed"},
-                        {"role": "error", "content": str(e)},
-                    ],
-                    reward=-2.0,
-                    metadata={"error": str(e), "scenario_id": scenario.id},
-                    metrics={"failed": True, "error_type": type(e).__name__},
-                )
-                trajectories.append(failed_traj)
-
-        return trajectories
+        rollout_coroutines = [rollout(model, scenario) for _ in range(num_samples)]
+        trajectories = await asyncio.gather(*rollout_coroutines)
+        return art.TrajectoryGroup(trajectories)
 
 
 # Example usage

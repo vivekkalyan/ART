@@ -187,13 +187,9 @@ class TaskTrainer:
     ) -> List[art.TrajectoryGroup]:
         """Generate trajectory groups for a batch of scenarios."""
 
-        # Generate trajectory groups by awaiting each task.run() call
-        async def create_trajectory_group(scenario):
-            trajectories = await task.run(self.model, scenario, config.trajectories_per_group)
-            return art.TrajectoryGroup(trajectories)
-
         groups = await art.gather_trajectory_groups(
-            create_trajectory_group(scenario) for scenario in scenarios
+            task.run(self.model, scenario, config.trajectories_per_group)
+            for scenario in scenarios
         )
 
         # Filter out None groups (failed judgments)
@@ -237,9 +233,9 @@ class TaskTrainer:
 
         total_reward = 0.0
         for scenario in eval_scenarios:
-            trajectories = await task.run(self.model, scenario, num_samples=1)
-            if trajectories:
-                total_reward += trajectories[0].reward
+            trajectory_group = await task.run(self.model, scenario, num_samples=1)
+            if trajectory_group.trajectories:
+                total_reward += trajectory_group.trajectories[0].reward
 
         avg_reward = total_reward / len(eval_scenarios) if eval_scenarios else 0
         print(f"  {task.name} - Average reward: {avg_reward:.4f}")
