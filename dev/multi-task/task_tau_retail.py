@@ -67,7 +67,7 @@ class TaskTauRetail(Task[TauTask]):
 
     async def run(
         self, model: art.Model, scenario: TauTask, num_samples: int = 1
-    ) -> List[art.Trajectory]:
+    ) -> art.TrajectoryGroup:
         """
         Run model on retail customer service scenarios and return trajectories with rewards.
         """
@@ -163,7 +163,7 @@ class TaskTauRetail(Task[TauTask]):
                 )
                 trajectories.append(failed_traj)
 
-        return trajectories
+        return art.TrajectoryGroup(trajectories)
 
 
 # Example usage
