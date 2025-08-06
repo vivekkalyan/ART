@@ -88,3 +88,5 @@ if __name__ == "__main__":
             print(scenario)
         except Exception as e:
             print(f"\n{split.upper()} split: Not available or error - {e}")
+
+    task.pre_train()
