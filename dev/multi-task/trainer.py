@@ -113,7 +113,6 @@ class TaskTrainer:
                 train_scenarios,
                 groups_per_step=config.groups_per_step,
                 num_epochs=config.num_epochs,
-                initial_step=await self.model.get_step(),
             )
 
             # Training loop
