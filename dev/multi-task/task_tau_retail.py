@@ -1,4 +1,4 @@
-from typing import List, Generator, Optional
+from typing import Generator, Optional
 import art
 from task import Task
 from tau_bench.envs.retail.env import MockRetailDomainEnv
