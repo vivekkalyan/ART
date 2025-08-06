@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Generator
+from typing import Generator
 import art
 from pydantic import BaseModel
 from task import Task

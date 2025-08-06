@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 
 class TaskTrainConfig(BaseModel):
@@ -30,6 +30,12 @@ class TaskTrainConfig(BaseModel):
 
     # Dataset settings
     training_dataset_seed: Optional[int] = None
+
+    # Metrics configuration
+    track_metrics: bool = True  # Whether to track and display task-specific metrics
+    tracked_metrics: Optional[List[str]] = (
+        None  # Specific metrics to track (None = track all)
+    )
 
 
 class TrainerConfig(BaseModel):

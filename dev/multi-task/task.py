@@ -1,4 +1,4 @@
-from typing import List, Generator, TypeVar, Generic
+from typing import Generator, TypeVar, Generic
 import art
 from config import TaskTrainConfig
 
@@ -44,5 +44,6 @@ class Task(Generic[TScenario]):
         - Can evaluate rewards immediately or use LLM judge on the group
         - Can be single-turn or multi-turn
         - Should use parallel execution for efficiency
+        - Should populate the metrics field in each trajectory for task-specific metrics
         """
         raise NotImplementedError

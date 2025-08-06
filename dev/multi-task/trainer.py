@@ -5,6 +5,7 @@ from typing import List, Union, Optional, Dict, Any
 import random
 from dotenv import load_dotenv
 import statistics
+import polars as pl
 
 from task import Task
 from config import TaskTrainConfig, TrainerConfig
@@ -219,23 +220,72 @@ class TaskTrainer:
 
         return filtered_groups
 
+    def _aggregate_metrics(
+        self, trajectory_groups: List[art.TrajectoryGroup], config: TaskTrainConfig
+    ) -> pl.DataFrame:
+        """
+        Aggregate metrics from multiple trajectory groups for evaluation using Polars.
+
+        Args:
+            trajectory_groups: List of trajectory groups from evaluation
+            config: Task configuration containing metrics settings
+
+        Returns:
+            Dictionary of aggregated metrics with metric names as keys
+        """
+        # Collect all trajectories
+        all_trajectories = []
+        for group in trajectory_groups:
+            all_trajectories.extend(group.trajectories)
+
+        metrics_data = []
+        for t in all_trajectories:
+            row = {**t.metrics, "reward": t.reward}
+            metrics_data.append(row)
+
+        # Create polars DataFrame
+        metrics_df = pl.DataFrame(metrics_data)
+
+        # Filter columns if specific metrics are requested
+        if config.tracked_metrics:
+            # Keep reward column and requested metrics
+            columns_to_keep = [
+                col
+                for col in metrics_df.columns
+                if col == "reward" or col in config.tracked_metrics
+            ]
+            if columns_to_keep:
+                metrics_df = metrics_df.select(columns_to_keep)
+
+        avg_metrics = metrics_df.select(
+            [pl.mean(c).alias(c) for c in metrics_df.columns]
+        )
+        return avg_metrics
+
     async def _evaluate_task(self, task: Task, val_scenarios: List[Any], step: int):
         """Evaluate model on a task's validation set."""
         print(f"Evaluating {task.name} at step {step}")
 
-        # Sample a subset for evaluation if needed
-        eval_size = min(10, len(val_scenarios))  # Evaluate on up to 10 scenarios
-        eval_scenarios = (
-            random.sample(val_scenarios, eval_size)
-            if len(val_scenarios) > eval_size
-            else val_scenarios
+        trajectory_groups = await art.gather_trajectory_groups(
+            task.run(self.model, scenario, num_samples=1) for scenario in val_scenarios
         )
 
-        total_reward = 0.0
-        for scenario in eval_scenarios:
-            trajectory_group = await task.run(self.model, scenario, num_samples=1)
-            if trajectory_group.trajectories:
-                total_reward += trajectory_group.trajectories[0].reward
+        # Filter out None groups (failed evaluations)
+        valid_groups = [
+            g for g in trajectory_groups if g is not None and g.trajectories
+        ]
 
-        avg_reward = total_reward / len(eval_scenarios) if eval_scenarios else 0
+        # Calculate average reward
+        total_reward = sum(g.trajectories[0].reward for g in valid_groups)
+        avg_reward = total_reward / len(val_scenarios) if val_scenarios else 0
         print(f"  {task.name} - Average reward: {avg_reward:.4f}")
+
+        # Aggregate and display task-specific metrics
+        if valid_groups and self.task_configs[task.name].track_metrics:
+            metrics = self._aggregate_metrics(
+                valid_groups, self.task_configs[task.name]
+            ).row(0, named=True)
+            if metrics:
+                print(f"  {task.name} - Metrics:")
+                for metric_name, metric_value in sorted(metrics.items()):
+                    print(f"    {metric_name}: {metric_value:.4f}")
