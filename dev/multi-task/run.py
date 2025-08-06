@@ -24,6 +24,7 @@ from task_arte import TaskArtE
 from task_tau_retail import TaskTauRetail
 from task_tau_airline import TaskTauAirline
 from task_summary import TaskSummary
+from task_temporal import TaskTemporal
 
 from trainer import TaskTrainer
 from config import TaskTrainConfig, TrainerConfig
@@ -38,6 +39,7 @@ AVAILABLE_TASKS = {
     "tau-retail": TaskTauRetail,
     "tau-airline": TaskTauAirline,
     "summary": TaskSummary,
+    "temporal": TaskTemporal,
 }
 
 
@@ -75,7 +77,7 @@ def parse_args():
         "--task",
         type=str,
         required=True,
-        help="Comma-separated list of tasks to train on (e.g., 'arte' or 'arte,tau-retail')",
+        help="Comma-separated list of tasks to train on. Available: arte, tau-retail, tau-airline, summary, temporal",
     )
 
     # Model configuration
