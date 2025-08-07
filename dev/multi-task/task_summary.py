@@ -60,7 +60,7 @@ class TaskSummary(Task[Document]):
             self._val_documents, self._train_documents = load_documents()
 
     async def run(
-        self, model: art.Model, scenario: Document, num_samples: int = 1
+        self, model: art.TrainableModel, scenario: Document, num_samples: int = 1
     ) -> art.TrajectoryGroup:
         """
         Run model on a document and return a trajectory group with rewards.

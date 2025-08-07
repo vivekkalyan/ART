@@ -32,7 +32,7 @@ class Task(Generic[TScenario]):
         pass
 
     async def run(
-        self, model: art.Model, scenario: TScenario, num_samples: int = 1
+        self, model: art.TrainableModel, scenario: TScenario, num_samples: int = 1
     ) -> art.TrajectoryGroup:
         """
         Run model on scenarios and return a trajectory group with rewards.

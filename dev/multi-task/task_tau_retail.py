@@ -90,7 +90,10 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
             yield (task_index, task_info, split)
 
     async def run(
-        self, model: art.Model, scenario: Tuple[int, dict, str], num_samples: int = 1
+        self,
+        model: art.TrainableModel,
+        scenario: Tuple[int, dict, str],
+        num_samples: int = 1,
     ) -> art.TrajectoryGroup:
         """
         Run model on retail customer service scenarios and return trajectories with rewards.
@@ -102,12 +105,15 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
             env="retail",
             model_provider="hosted_vllm",
             user_model_provider="openai",
+            model=model.name,
             user_model="gpt-4.1",
             user_strategy="llm",
             agent_strategy="tool-calling-rl",
             temperature=1.0,
             task_split=split,
             api_key=model.inference_api_key,
+            base_url=model.inference_base_url,
+            base_model=model.base_model,
         )
 
         # Generate trajectories using rollout_tau_bench_task

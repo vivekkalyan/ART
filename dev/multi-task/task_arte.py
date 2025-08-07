@@ -55,7 +55,7 @@ class TaskArtE(Task[SyntheticQuery]):
         generate_database()
 
     async def run(
-        self, model: art.Model, scenario: SyntheticQuery, num_samples: int = 1
+        self, model: art.TrainableModel, scenario: SyntheticQuery, num_samples: int = 1
     ) -> art.TrajectoryGroup:
 
         class TaskProjectConfig(BaseModel):

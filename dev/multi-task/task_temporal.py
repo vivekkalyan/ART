@@ -95,7 +95,7 @@ class TaskTemporal(Task[TemporalCluePuzzle]):
             raise ValueError(f"Unknown split: {split}")
 
     async def run(
-        self, model: art.Model, scenario: TemporalCluePuzzle, num_samples: int = 1
+        self, model: art.TrainableModel, scenario: TemporalCluePuzzle, num_samples: int = 1
     ) -> art.TrajectoryGroup:
         """
         Run model on temporal clue puzzles and return trajectories with rewards.
