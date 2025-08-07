@@ -41,8 +41,9 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
     def __init__(
         self,
         name: str = "tau-retail",
-        user_strategy: UserStrategy = UserStrategy.REACT,
-        user_model: str = "gpt-4o",
+        # TODO: check if mockenv needs this for dataset part
+        user_strategy: UserStrategy = UserStrategy.LLM,
+        user_model: str = "gpt-4.1",
         user_provider: Optional[str] = "openai",
     ):
         super().__init__(name)
