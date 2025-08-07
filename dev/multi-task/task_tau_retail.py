@@ -60,7 +60,7 @@ class TaskTauRetail(Task[Tuple[int, str]]):
     def get_dataset(self, split: str) -> Generator[Tuple[int, str], None, None]:
         """
         Returns a generator of scenarios for the given split.
-        always use 'test' split from the environment and divide it into train/val portions based on task indices.
+        Train uses first N tasks, test uses next M tasks.
         """
         # we can hard code these values for now, since its only used to get the dataset (and it doesnt depend on these
         # values)
@@ -78,15 +78,11 @@ class TaskTauRetail(Task[Tuple[int, str]]):
         if split == "train":
             # Training tasks: first training_dataset_size tasks
             task_indices = range(min(config.training_dataset_size, len(env.tasks)))
-        elif split in ["val", "dev"]:
-            # Validation tasks: next val_set_size tasks after training
+        elif split == "test":
+            # Test tasks: next val_set_size tasks after training
             start_idx = config.training_dataset_size
             end_idx = start_idx + config.val_set_size
             task_indices = range(start_idx, min(end_idx, len(env.tasks)))
-        elif split == "test":
-            # Test tasks: all remaining tasks after train+val
-            start_idx = config.training_dataset_size + config.val_set_size
-            task_indices = range(start_idx, len(env.tasks))
         else:
             raise ValueError(f"Unknown split: {split}")
 
@@ -144,7 +140,7 @@ if __name__ == "__main__":
     task = TaskTauRetail()
 
     # Get a sample scenario from different splits
-    for split in ["train", "dev", "test"]:
+    for split in ["train", "test"]:
         try:
             dataset = task.get_dataset(split)
             task_index, task_split = next(dataset)
