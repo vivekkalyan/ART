@@ -1,7 +1,9 @@
 import asyncio
+from types import SimpleNamespace
 from typing import Generator, Optional
 import art
 from task import Task
+from config import TaskTrainConfig
 from tau_bench.envs.retail.env import MockRetailDomainEnv
 from tau_bench.envs.user import UserStrategy
 from tau_bench.types import TauBenchPolicyConfig, RunConfig
@@ -95,40 +97,18 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
         """
         task_index, task_info, split = scenario
 
-        # Create a config for the model if it doesn't have TauBenchPolicyConfig
-        if not hasattr(model, "config") or not isinstance(
-            model.config, TauBenchPolicyConfig
-        ):
-            # Create a default config that matches the rollout_tau_bench_task expectations
-            run_config = RunConfig(
-                model_provider="openai",  # Will be overridden by the model's actual provider
-                user_model_provider=self.user_provider or "openai",
-                user_model=self.user_model,
-                env="retail",  # Important: change to retail
-                user_strategy=self.user_strategy.value
-                if isinstance(self.user_strategy, UserStrategy)
-                else self.user_strategy,
-                task_split=split,
-                max_num_steps=30,
-                reward_type="real",
-            )
-
-            # Wrap the model with the config
-            model_with_config = type(
-                "ModelWithConfig",
-                (),
-                {
-                    "config": TauBenchPolicyConfig(run_config=run_config),
-                    "name": getattr(model, "name", "model"),
-                    "inference_api_key": getattr(model, "inference_api_key", None),
-                    "inference_base_url": getattr(model, "inference_base_url", None),
-                    "base_model": getattr(model, "base_model", "gpt-4"),
-                    "generate": model.generate,
-                    "__getattr__": lambda self, name: getattr(model, name),
-                },
-            )()
-        else:
-            model_with_config = model
+        model.config = SimpleNamespace()
+        model.config.run_config = RunConfig(
+            env="retail",
+            model_provider="hosted_vllm",
+            user_model_provider="openai",
+            user_model="gpt-4.1",
+            user_strategy="llm",
+            agent_strategy="tool-calling-rl",
+            temperature=1.0,
+            task_split=split,
+            api_key=model.inference_api_key,
+        )
 
         # Generate trajectories using rollout_tau_bench_task
         rollout_coroutines = [
