@@ -70,24 +70,43 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
     def get_dataset(self, split: str) -> Generator[Tuple[int, dict, str], None, None]:
         """
         Returns a generator of scenarios for the given split.
-        Each scenario is a tuple of (task_index, task_info, split) from the retail domain.
+        always use 'test' split from the environment and divide it into train/val portions based on task indices.
         """
-        # Create environment to get tasks
         env = MockRetailDomainEnv(
             user_strategy=self.user_strategy,
             user_model=self.user_model,
             user_provider=self.user_provider,
-            task_split=split,
+            task_split="test",
         )
 
-        # Yield each task with its index and split
-        for task_index, task in enumerate(env.tasks):
-            # Store minimal task info needed for logging
-            task_info = {
-                "user_id": task.user_id,
-                "instruction": task.instruction,
-            }
-            yield (task_index, task_info, split)
+        # Get default config for dataset sizes
+        config = self.get_default_config()
+
+        # Determine which task indices to yield based on the requested split
+        if split == "train":
+            # Training tasks: first training_dataset_size tasks
+            task_indices = range(min(config.training_dataset_size, len(env.tasks)))
+        elif split in ["val", "dev"]:
+            # Validation tasks: next val_set_size tasks after training
+            start_idx = config.training_dataset_size
+            end_idx = start_idx + config.val_set_size
+            task_indices = range(start_idx, min(end_idx, len(env.tasks)))
+        elif split == "test":
+            # Test tasks: all remaining tasks after train+val
+            start_idx = config.training_dataset_size + config.val_set_size
+            task_indices = range(start_idx, len(env.tasks))
+        else:
+            raise ValueError(f"Unknown split: {split}")
+
+        # Yield tasks for the specified indices
+        for idx in task_indices:
+            if idx < len(env.tasks):
+                task = env.tasks[idx]
+                task_info = {
+                    "user_id": task.user_id,
+                    "instruction": task.instruction,
+                }
+                yield (idx, task_info, split)
 
     async def run(
         self,
@@ -110,7 +129,7 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
             user_strategy="llm",
             agent_strategy="tool-calling-rl",
             temperature=1.0,
-            task_split=split,
+            task_split="test",
             api_key=model.inference_api_key,
             base_url=model.inference_base_url,
             base_model=model.base_model,
