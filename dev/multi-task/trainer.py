@@ -85,6 +85,7 @@ class TaskTrainer:
 
         with LocalBackend() as backend:
             await self.model.register(backend)
+            print(f"Model configuration: {self.model.model_dump()}")
 
             # Load datasets
             print(f"Loading training data for {task.name}...")
