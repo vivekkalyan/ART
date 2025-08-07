@@ -66,7 +66,7 @@ class TaskTemporal(Task[TemporalCluePuzzle]):
         random.seed(42)
         random.shuffle(self.train_puzzles)
 
-    def get_default_config(self) -> TaskTrainConfig:
+    def get_train_config(self) -> TaskTrainConfig:
         """Temporal clue specific default configuration."""
         return TaskTrainConfig(
             trajectories_per_group=50,

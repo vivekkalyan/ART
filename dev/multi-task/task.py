@@ -9,9 +9,9 @@ class Task(Generic[TScenario]):
     def __init__(self, name: str):
         self.name = name
 
-    def get_default_config(self) -> TaskTrainConfig:
+    def get_train_config(self) -> TaskTrainConfig:
         """
-        Returns the default training config for this task.
+        Returns the training config for this task.
         Subclasses should override this to provide task-specific defaults.
         """
         return TaskTrainConfig()  # Base defaults

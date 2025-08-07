@@ -13,7 +13,7 @@ class TaskSummary(Task[Document]):
         self._val_documents = None
         self._train_documents = None
 
-    def get_default_config(self) -> TaskTrainConfig:
+    def get_train_config(self) -> TaskTrainConfig:
         """Summary-specific default configuration based on Summary-RL settings."""
         return TaskTrainConfig(
             trajectories_per_group=10,

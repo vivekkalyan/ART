@@ -42,12 +42,12 @@ class TaskTrainer:
 
         # Build final configs with clear precedence:
         # 1. User-provided task_configs (highest priority)
-        # 2. Task's get_default_config() (middle priority)
+        # 2. Task's get_train_config() (middle priority)
         # 3. TaskTrainConfig defaults (lowest priority)
         self.task_configs = {}
         for task in self.tasks:
             # Start with task's defaults
-            task_config = task.get_default_config()
+            task_config = task.get_train_config()
 
             # Override with user-provided config if exists
             if task_configs and task.name in task_configs:

@@ -14,7 +14,7 @@ class TaskArtE(Task[SyntheticQuery]):
     def __init__(self, name: str = "ART-E"):
         super().__init__(name)
 
-    def get_default_config(self) -> TaskTrainConfig:
+    def get_train_config(self) -> TaskTrainConfig:
         """ART-E specific default configuration."""
         return TaskTrainConfig(
             # max_turns: int = 10,

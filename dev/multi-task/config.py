@@ -6,7 +6,7 @@ class TaskTrainConfig(BaseModel):
     """Task-specific training configuration with sensible defaults.
 
     This configuration can be used for any task and provides all the common
-    training parameters. Tasks can override get_default_config() to provide
+    training parameters. Tasks can override get_train_config() to provide
     task-specific defaults.
     """
 

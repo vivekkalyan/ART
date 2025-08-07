@@ -43,7 +43,7 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
     def __init__(self, name: str = "tau-retail"):
         super().__init__(name)
 
-    def get_default_config(self) -> TaskTrainConfig:
+    def get_train_config(self) -> TaskTrainConfig:
         """Tau-bench retail specific default configuration."""
         return TaskTrainConfig(
             trajectories_per_group=64,
@@ -72,7 +72,7 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
         )
 
         # Get default config for dataset sizes
-        config = self.get_default_config()
+        config = self.get_train_config()
 
         # Determine which task indices to yield based on the requested split
         if split == "train":
