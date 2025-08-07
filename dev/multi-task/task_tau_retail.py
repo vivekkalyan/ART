@@ -40,18 +40,8 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
     exchanges, and customer inquiries.
     """
 
-    def __init__(
-        self,
-        name: str = "tau-retail",
-        # TODO: check if mockenv needs this for dataset part
-        user_strategy: UserStrategy = UserStrategy.LLM,
-        user_model: str = "gpt-4.1",
-        user_provider: Optional[str] = "openai",
-    ):
+    def __init__(self, name: str = "tau-retail"):
         super().__init__(name)
-        self.user_strategy = user_strategy
-        self.user_model = user_model
-        self.user_provider = user_provider
 
     def get_default_config(self) -> TaskTrainConfig:
         """Tau-bench retail specific default configuration."""
@@ -72,10 +62,12 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
         Returns a generator of scenarios for the given split.
         always use 'test' split from the environment and divide it into train/val portions based on task indices.
         """
+        # we can hard code these values for now, since its only used to get the dataset (and it doesnt depend on these
+        # values)
         env = MockRetailDomainEnv(
-            user_strategy=self.user_strategy,
-            user_model=self.user_model,
-            user_provider=self.user_provider,
+            user_strategy=UserStrategy.LLM,
+            user_model="gpt-4.1",
+            user_provider="openai",
             task_split="test",
         )
 
@@ -126,7 +118,7 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
             user_model_provider="openai",
             model=model.name,
             user_model="gpt-4.1",
-            user_strategy="llm",
+            user_strategy=UserStrategy.LLM,
             agent_strategy="tool-calling-rl",
             temperature=1.0,
             task_split="test",
