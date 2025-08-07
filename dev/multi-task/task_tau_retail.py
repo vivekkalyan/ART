@@ -3,7 +3,8 @@ import art
 from task import Task
 from tau_bench.envs.retail.env import MockRetailDomainEnv
 from tau_bench.envs.user import UserStrategy
-from tau_bench.types import Task as TauTask, TauBenchPolicyConfig, RunConfig
+from tau_bench.types import TauBenchPolicyConfig, RunConfig
+from typing import Tuple
 import sys
 import os
 
@@ -27,7 +28,7 @@ except ImportError:
     rollout_tau_bench_task = run_rl.rollout_tau_bench_task
 
 
-class TaskTauRetail(Task[TauTask]):
+class TaskTauRetail(Task[Tuple[int, dict, str]]):
     """
     Task wrapper for tau-bench retail domain.
 
@@ -49,9 +50,10 @@ class TaskTauRetail(Task[TauTask]):
         self.user_provider = user_provider
 
     def get_dataset(self, split: str) -> Generator[TauTask, None, None]:
+    def get_dataset(self, split: str) -> Generator[Tuple[int, dict, str], None, None]:
         """
         Returns a generator of scenarios for the given split.
-        Each scenario is a TauTask object from the retail domain.
+        Each scenario is a tuple of (task_index, task_info, split) from the retail domain.
         """
         # Create environment to get tasks
         env = MockRetailDomainEnv(
@@ -61,36 +63,22 @@ class TaskTauRetail(Task[TauTask]):
             task_split=split,
         )
 
-        # Yield each task as a scenario
-        for task in env.tasks:
-            yield task
+        # Yield each task with its index and split
+        for task_index, task in enumerate(env.tasks):
+            # Store minimal task info needed for logging
+            task_info = {
+                "user_id": task.user_id,
+                "instruction": task.instruction,
+            }
+            yield (task_index, task_info, split)
 
     async def run(
-        self, model: art.Model, scenario: TauTask, num_samples: int = 1
+        self, model: art.Model, scenario: Tuple[int, dict, str], num_samples: int = 1
     ) -> art.TrajectoryGroup:
         """
         Run model on retail customer service scenarios and return trajectories with rewards.
         """
-        # Create a temporary environment to find the task index
-        env = MockRetailDomainEnv(
-            user_strategy=self.user_strategy,
-            user_model=self.user_model,
-            user_provider=self.user_provider,
-            task_split="test",
-        )
-
-        # Find task index
-        task_index = None
-        for i, task in enumerate(env.tasks):
-            if (
-                task.user_id == scenario.user_id
-                and task.instruction == scenario.instruction
-            ):
-                task_index = i
-                break
-
-        if task_index is None:
-            raise ValueError(f"Task not found for scenario: {scenario}")
+        task_index, task_info, split = scenario
 
         # Create a config for the model if it doesn't have TauBenchPolicyConfig
         if not hasattr(model, "config") or not isinstance(
@@ -105,7 +93,7 @@ class TaskTauRetail(Task[TauTask]):
                 user_strategy=self.user_strategy.value
                 if isinstance(self.user_strategy, UserStrategy)
                 else self.user_strategy,
-                task_split="test",
+                task_split=split,
                 max_num_steps=30,
                 reward_type="real",
             )
@@ -135,14 +123,14 @@ class TaskTauRetail(Task[TauTask]):
                     model=model_with_config,
                     task_index=task_index,
                     step=0,
-                    phase="test",
+                    phase=split,
                     reward_type="real",
                     is_shadow=False,
                 )
 
                 # Update metadata to match our format
                 traj.metadata["sample_idx"] = sample_idx
-                traj.metadata["scenario_user_id"] = scenario.user_id
+                traj.metadata["scenario_user_id"] = task_info["user_id"]
 
                 trajectories.append(traj)
 
@@ -156,7 +144,7 @@ class TaskTauRetail(Task[TauTask]):
                     reward=-1.0,
                     metadata={
                         "error": str(e),
-                        "scenario_user_id": scenario.user_id,
+                        "scenario_user_id": task_info["user_id"],
                         "sample_idx": sample_idx,
                     },
                     metrics={"failed": True},
@@ -175,9 +163,10 @@ if __name__ == "__main__":
     for split in ["train", "dev", "test"]:
         try:
             dataset = task.get_dataset(split)
-            scenario = next(dataset)
+            task_index, task_info, task_split = next(dataset)
             print(f"\n{split.upper()} split:")
-            print(f"  Scenario user_id: {scenario.user_id}")
-            print(f"  Number of expected actions: {len(scenario.actions)}")
+            print(f"  Task index: {task_index}")
+            print(f"  Split: {task_split}")
+            print(f"  Scenario user_id: {task_info['user_id']}")
         except Exception as e:
             print(f"\n{split.upper()} split: Not available or error - {e}")
