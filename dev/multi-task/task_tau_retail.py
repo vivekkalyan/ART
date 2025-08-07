@@ -1,3 +1,4 @@
+import asyncio
 from typing import Generator, Optional
 import art
 from task import Task
@@ -129,41 +130,18 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
             model_with_config = model
 
         # Generate trajectories using rollout_tau_bench_task
-        trajectories = []
-        for sample_idx in range(num_samples):
-            try:
-                traj = await rollout_tau_bench_task(
-                    model=model_with_config,
-                    task_index=task_index,
-                    step=0,
-                    phase=split,
-                    reward_type="real",
-                    is_shadow=False,
-                )
-
-                # Update metadata to match our format
-                traj.metadata["sample_idx"] = sample_idx
-                traj.metadata["scenario_user_id"] = task_info["user_id"]
-
-                trajectories.append(traj)
-
-            except Exception as e:
-                # If run fails, create a failed trajectory
-                failed_traj = art.Trajectory(
-                    messages_and_choices=[
-                        {"role": "system", "content": "Task failed"},
-                        {"role": "assistant", "content": f"Error: {str(e)}"},
-                    ],
-                    reward=-1.0,
-                    metadata={
-                        "error": str(e),
-                        "scenario_user_id": task_info["user_id"],
-                        "sample_idx": sample_idx,
-                    },
-                    metrics={"failed": True},
-                )
-                trajectories.append(failed_traj)
-
+        rollout_coroutines = [
+            rollout_tau_bench_task(
+                model=model,
+                task_index=task_index,
+                step=0,
+                phase=split,
+                reward_type="real",
+                is_shadow=False,
+            )
+            for _ in range(num_samples)
+        ]
+        trajectories = await asyncio.gather(*rollout_coroutines)
         return art.TrajectoryGroup(trajectories)
 
 
