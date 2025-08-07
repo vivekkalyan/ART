@@ -6,7 +6,7 @@ SkyPilot + RunPod Usage:
     # Single task training
     uv run run.py --task arte --fast
 
-    # Multi-task with custom GPU configuration  
+    # Multi-task with custom GPU configuration
     uv run run.py --task arte,tau-retail --gpu-type H200-SXM --num-gpus 2
 
     # Custom cluster name and model settings
@@ -47,7 +47,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Train models on single or multiple tasks"
     )
-    
+
     # SkyPilot options
     parser.add_argument(
         "--cluster-name",
@@ -126,7 +126,7 @@ def launch_skypilot_training(args):
     except ImportError:
         print("ERROR: SkyPilot not installed. Install with: uv add --extra runpod .")
         return 1
-    
+
     # Build training command for remote execution
     train_args = []
     if args.task:
@@ -142,13 +142,15 @@ def launch_skypilot_training(args):
     if args.epochs:
         train_args.extend(["--epochs", str(args.epochs)])
     if args.trajectories_per_group:
-        train_args.extend(["--trajectories-per-group", str(args.trajectories_per_group)])
+        train_args.extend(
+            ["--trajectories-per-group", str(args.trajectories_per_group)]
+        )
     if args.groups_per_step:
         train_args.extend(["--groups-per-step", str(args.groups_per_step)])
-    
+
     train_cmd = f"uv run run.py {' '.join(train_args)}"
     print(f"Remote training command: {train_cmd}")
-    
+
     # Setup script
     setup_script = textwrap.dedent(
         """
@@ -170,7 +172,7 @@ def launch_skypilot_training(args):
         ln -sf ~/ART/dev/tau-bench ./tau-bench
         """
     )
-    
+
     run_script = textwrap.dedent(f"""
         # Refresh dependencies and ensure proper setup
         uv remove openpipe-art art-e tau-bench summarizer-rl 2>/dev/null || true
@@ -196,7 +198,7 @@ def launch_skypilot_training(args):
         echo "Starting: {train_cmd}"
         {train_cmd}
     """)
-    
+
     # Create SkyPilot task
     task = sky.Task(
         name="multi-task-training",
@@ -205,7 +207,7 @@ def launch_skypilot_training(args):
         workdir=".",
         envs=dict(dotenv_values()),
     )
-    
+
     # Set resources
     gpu_spec = f"{args.gpu_type}:{args.num_gpus}"
     task.set_resources(
@@ -215,23 +217,23 @@ def launch_skypilot_training(args):
             region="US",
         )
     )
-    
+
     task.set_file_mounts({"~/ART": "../.."})
-    
+
     # Cluster name
     cluster_name = args.cluster_name or "multi-task-training"
     cluster_prefix = os.environ.get("CLUSTER_PREFIX")
     if cluster_prefix:
         cluster_name = f"{cluster_prefix}-{cluster_name}"
-    
+
     print(f"Launching on cluster: {cluster_name}")
-    
+
     # Check existing cluster
     cluster_status = sky.stream_and_get(sky.status(cluster_names=[cluster_name]))
     if len(cluster_status) > 0 and cluster_status[0]["status"] == ClusterStatus.UP:
         print(f"Cluster {cluster_name} is UP. Canceling active jobs...")
         sky.stream_and_get(sky.cancel(cluster_name, all=True))
-    
+
     # Launch
     job_id, _ = sky.stream_and_get(
         sky.launch(
@@ -243,15 +245,15 @@ def launch_skypilot_training(args):
             fast=args.fast,
         )
     )
-    
+
     print(f"Job submitted (ID: {job_id}). Streaming logs...")
     exit_code = sky.tail_logs(cluster_name=cluster_name, job_id=job_id, follow=True)
-    
+
     if exit_code == 0:
         print("🎉 Training completed successfully!")
     else:
         print(f"❌ Training failed with exit code {exit_code}")
-    
+
     return exit_code
 
 
@@ -329,12 +331,12 @@ async def run_local_training(args):
 def main():
     """Entry point - decides between SkyPilot launch or local execution."""
     args = parse_args()
-    
+
     # Check if we're running in a SkyPilot environment (remote)
     # or if user explicitly wants to run locally for testing
     is_remote = os.environ.get("SKYPILOT_NODE_IPS") is not None
     force_local = os.environ.get("MULTI_TASK_LOCAL") == "1"
-    
+
     if is_remote or force_local:
         # We're running on the remote SkyPilot node, execute training
         return asyncio.run(run_local_training(args))
