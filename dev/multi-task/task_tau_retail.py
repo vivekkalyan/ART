@@ -49,7 +49,20 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
         self.user_model = user_model
         self.user_provider = user_provider
 
-    def get_dataset(self, split: str) -> Generator[TauTask, None, None]:
+    def get_default_config(self) -> TaskTrainConfig:
+        """Tau-bench retail specific default configuration."""
+        return TaskTrainConfig(
+            trajectories_per_group=64,
+            groups_per_step=32,
+            learning_rate=5e-7,
+            eval_steps=8,
+            val_set_size=60,
+            training_dataset_size=32,
+            num_epochs=50,
+            scale_rewards=True,
+            importance_sampling_level="token",
+        )
+
     def get_dataset(self, split: str) -> Generator[Tuple[int, dict, str], None, None]:
         """
         Returns a generator of scenarios for the given split.
