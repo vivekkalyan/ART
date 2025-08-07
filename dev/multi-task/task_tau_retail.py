@@ -31,7 +31,7 @@ except ImportError:
     rollout_tau_bench_task = run_rl.rollout_tau_bench_task
 
 
-class TaskTauRetail(Task[Tuple[int, dict, str]]):
+class TaskTauRetail(Task[Tuple[int, str]]):
     """
     Task wrapper for tau-bench retail domain.
 
@@ -57,7 +57,7 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
             importance_sampling_level="token",
         )
 
-    def get_dataset(self, split: str) -> Generator[Tuple[int, dict, str], None, None]:
+    def get_dataset(self, split: str) -> Generator[Tuple[int, str], None, None]:
         """
         Returns a generator of scenarios for the given split.
         always use 'test' split from the environment and divide it into train/val portions based on task indices.
@@ -93,23 +93,18 @@ class TaskTauRetail(Task[Tuple[int, dict, str]]):
         # Yield tasks for the specified indices
         for idx in task_indices:
             if idx < len(env.tasks):
-                task = env.tasks[idx]
-                task_info = {
-                    "user_id": task.user_id,
-                    "instruction": task.instruction,
-                }
-                yield (idx, task_info, split)
+                yield (idx, split)
 
     async def run(
         self,
         model: art.TrainableModel,
-        scenario: Tuple[int, dict, str],
+        scenario: Tuple[int, str],
         num_samples: int = 1,
     ) -> art.TrajectoryGroup:
         """
         Run model on retail customer service scenarios and return trajectories with rewards.
         """
-        task_index, task_info, split = scenario
+        task_index, split = scenario
 
         model.config = SimpleNamespace()
         model.config.run_config = RunConfig(
@@ -152,10 +147,9 @@ if __name__ == "__main__":
     for split in ["train", "dev", "test"]:
         try:
             dataset = task.get_dataset(split)
-            task_index, task_info, task_split = next(dataset)
+            task_index, task_split = next(dataset)
             print(f"\n{split.upper()} split:")
             print(f"  Task index: {task_index}")
             print(f"  Split: {task_split}")
-            print(f"  Scenario user_id: {task_info['user_id']}")
         except Exception as e:
             print(f"\n{split.upper()} split: Not available or error - {e}")
