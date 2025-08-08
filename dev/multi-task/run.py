@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument(
         "--cluster-name",
         type=str,
-        help="SkyPilot cluster name",
+        help="SkyPilot cluster name (required for SkyPilot launches)",
     )
     parser.add_argument(
         "--gpu-type",
@@ -85,8 +85,8 @@ def parse_args():
     parser.add_argument(
         "--model-name",
         type=str,
-        default="multi-task-model-001",
-        help="Name for the model",
+        required=True,
+        help="Name for the model (required)",
     )
     parser.add_argument(
         "--base-model",
@@ -132,9 +132,8 @@ def launch_skypilot_training(args):
     train_args = []
     if args.task:
         train_args.extend(["--task", args.task])
-    if args.model_name != "multi-task-model-001":  # Only if changed from default
-        train_args.extend(["--model-name", args.model_name])
-    if args.base_model != "Qwen/Qwen2.5-14B-Instruct":  # Only if changed from default
+    train_args.extend(["--model-name", args.model_name])
+    if args.base_model != "Qwen/Qwen2.5-14B-Instruct":
         train_args.extend(["--base-model", args.base_model])
     if args.project != "multi_task_rl":  # Only if changed from default
         train_args.extend(["--project", args.project])
@@ -222,7 +221,11 @@ def launch_skypilot_training(args):
     task.set_file_mounts({"~/ART": "../.."})
 
     # Cluster name
-    cluster_name = args.cluster_name or "multi-task-training"
+    if not args.cluster_name:
+        print("ERROR: --cluster-name is required for SkyPilot launches")
+        return 1
+
+    cluster_name = args.cluster_name
     cluster_prefix = os.environ.get("CLUSTER_PREFIX")
     if cluster_prefix:
         cluster_name = f"{cluster_prefix}-{cluster_name}"
