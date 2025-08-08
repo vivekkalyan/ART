@@ -70,8 +70,8 @@ class TaskTemporal(Task[TemporalCluePuzzle]):
         """Temporal clue specific default configuration."""
         return TaskTrainConfig(
             trajectories_per_group=50,
-            groups_per_step=4,
-            learning_rate=5e-5,
+            groups_per_step=32,
+            learning_rate=6e-6,
             eval_steps=25,
             val_set_size=64,
             training_dataset_size=len(self.train_puzzles),
