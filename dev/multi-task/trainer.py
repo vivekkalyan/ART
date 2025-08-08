@@ -275,6 +275,9 @@ class TaskTrainer:
             g for g in trajectory_groups if g is not None and g.trajectories
         ]
 
+        # Log validation metrics
+        await self.model.log(valid_groups, split="val")
+
         # Calculate average reward
         total_reward = sum(g.trajectories[0].reward for g in valid_groups)
         avg_reward = total_reward / len(val_scenarios) if val_scenarios else 0
