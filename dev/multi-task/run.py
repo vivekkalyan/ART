@@ -18,6 +18,7 @@ import asyncio
 import art
 import os
 import textwrap
+import logging
 from typing import Dict, Optional
 
 from task_arte import TaskArtE
@@ -259,6 +260,13 @@ def launch_skypilot_training(args):
 
 async def run_local_training(args):
     """Run the actual training locally (called both locally and remotely via SkyPilot)."""
+    import litellm
+
+    # Suprress debug info for Provider list statements
+    litellm.suppress_debug_info = True
+    # Set LiteLLM logger to WARNING level to suppress INFO messages
+    logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+
     # Parse task names
     task_names = [t.strip() for t in args.task.split(",")]
 
