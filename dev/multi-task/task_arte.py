@@ -36,7 +36,7 @@ class TaskArtE(Task[SyntheticQuery]):
             eval_steps=30,
             val_set_size=100,
             training_dataset_size=4000,
-            num_epochs=3,
+            num_epochs=2,
             scale_rewards=True,
             importance_sampling_level="token",
             minimum_reward_std_dev=0.0,
