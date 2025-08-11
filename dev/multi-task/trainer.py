@@ -69,6 +69,8 @@ class TaskTrainer:
 
     async def train(self):
         """Train on single or multiple tasks based on config."""
+        for task in self.tasks:
+            task.pre_train()
         if len(self.tasks) == 1:
             # Single task training uses the same sequential path
             await self._train_sequential()
@@ -116,7 +118,6 @@ class TaskTrainer:
                     print(f"Starting training on {task.name}")
 
                 config = self.task_configs[task.name]
-                task.pre_train()
 
                 # Load training data
                 print(f"Loading training data for {task.name}...")
