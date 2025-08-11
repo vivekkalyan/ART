@@ -103,6 +103,7 @@ class TaskTemporal(Task[TemporalCluePuzzle]):
         The reward is calculated as the accuracy - fraction of correctly answered clues.
         """
 
+        @art.retry()
         async def rollout(puzzle: TemporalCluePuzzle) -> art.Trajectory:
             """Generate a single trajectory for a temporal clue puzzle."""
             messages: art.Messages = [{"role": "user", "content": puzzle["prompt"]}]
