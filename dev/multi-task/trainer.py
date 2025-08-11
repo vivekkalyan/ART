@@ -97,6 +97,9 @@ class TaskTrainer:
             await self.model.register(backend)
             print(f"Model configuration: {self.model.model_dump()}")
 
+            if self.config.fast_dev_run:
+                print("\n🚀 Fast dev run mode: Running 1 train/val step per task\n")
+
             # Load all validation datasets upfront
             all_val_datasets = {}
             for task in self.tasks:
@@ -142,7 +145,11 @@ class TaskTrainer:
 
                 for batch in train_iterator:
                     # Evaluate only current task at regular intervals
-                    if batch.step % config.eval_steps == 0:
+                    # In fast-dev-run, always evaluate at step 0
+                    should_eval = (batch.step % config.eval_steps == 0) or (
+                        self.config.fast_dev_run and batch.step == 0
+                    )
+                    if should_eval:
                         print(f"\n--- Evaluating at Iteration {batch.step} ---")
                         await self._evaluate_task(
                             task, all_val_datasets[task.name], batch.step
@@ -183,6 +190,13 @@ class TaskTrainer:
                             epsilon_high=config.epsilon_high,
                         ),
                     )
+
+                    # Exit early in fast-dev-run mode after 1 step
+                    if self.config.fast_dev_run:
+                        print(
+                            f"Fast dev run: Completed 1 training step for {task.name}"
+                        )
+                        break
 
                 # Evaluate all tasks only in multi-task mode after each task completes
                 if is_multi_task and task_idx < len(self.tasks) - 1:
@@ -287,6 +301,11 @@ class TaskTrainer:
     async def _evaluate_task(self, task: Task, val_scenarios: List[Any], step: int):
         """Evaluate model on a task's validation set."""
         print(f"Evaluating {task.name} at step {step}")
+
+        # In fast-dev-run, only evaluate on 1 scenario
+        if self.config.fast_dev_run:
+            val_scenarios = val_scenarios[:1]
+            print("  Fast dev run: Evaluating on 1 validation scenario")
 
         trajectory_groups = await art.gather_trajectory_groups(
             task.run(self.model, scenario, num_samples=1) for scenario in val_scenarios

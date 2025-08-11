@@ -114,6 +114,11 @@ def parse_args():
     parser.add_argument(
         "--groups-per-step", type=int, help="Number of groups per training step"
     )
+    parser.add_argument(
+        "--fast-dev-run",
+        action="store_true",
+        help="Run single train/val step per task for quick testing",
+    )
 
     return parser.parse_args()
 
@@ -147,6 +152,8 @@ def launch_skypilot_training(args):
         )
     if args.groups_per_step:
         train_args.extend(["--groups-per-step", str(args.groups_per_step)])
+    if args.fast_dev_run:
+        train_args.append("--fast-dev-run")
 
     train_cmd = f"uv run run.py {' '.join(train_args)}"
     print(f"Remote training command: {train_cmd}")
@@ -317,6 +324,7 @@ async def run_local_training(args):
     # Create global config
     global_config = TrainerConfig(
         mixing_strategy=args.strategy,
+        fast_dev_run=args.fast_dev_run,
     )
 
     # Create trainer

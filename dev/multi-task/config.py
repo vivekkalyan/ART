@@ -47,3 +47,5 @@ class TrainerConfig(BaseModel):
 
     # Mixing strategy for multi-task training
     mixing_strategy: Literal["sequential", "interleaved", "proportional"] = "sequential"
+    # Fast dev run mode - runs 1 train/val step per task for quick testing
+    fast_dev_run: bool = False
