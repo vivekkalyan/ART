@@ -16,7 +16,7 @@ dependencies = [
 
 [tool.uv.sources]
 openpipe-art = { path = "../../", editable = true }
-art-e = { path = "../../examples/art-e/", editable = true }
+art-e = { path = "../art-e/", editable = true }
 tau-bench = { path = "../tau-bench/", editable = true }
 summarizer-rl = { path = "../../examples/Summary-RL/", editable = true }
 

@@ -169,7 +169,7 @@ def launch_skypilot_training(args):
         # Install dependencies
         uv remove openpipe-art art-e tau-bench summarizer-rl 2>/dev/null || true
         uv add --editable ~/ART --extra backend --extra plotting
-        uv add --editable ~/ART/examples/art-e
+        uv add --editable ~/ART/dev/art-e
         uv add --editable ~/ART/dev/tau-bench
         uv add --editable ~/ART/examples/Summary-RL
         uv add --extra runpod .
@@ -184,7 +184,7 @@ def launch_skypilot_training(args):
         # Refresh dependencies and ensure proper setup
         uv remove openpipe-art art-e tau-bench summarizer-rl 2>/dev/null || true
         uv add --editable ~/ART --extra backend --extra plotting
-        uv add --editable ~/ART/examples/art-e
+        uv add --editable ~/ART/dev/art-e
         uv add --editable ~/ART/dev/tau-bench
         uv add --editable ~/ART/examples/Summary-RL
         
