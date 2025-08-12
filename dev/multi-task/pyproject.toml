@@ -24,4 +24,5 @@ summarizer-rl = { path = "../../examples/Summary-RL/", editable = true }
 override-dependencies = [
     "bitsandbytes==0.46.1; sys_platform == 'linux'",
     "xformers; sys_platform == 'linux'",
+    "vllm==0.10.0; sys_platform == 'linux'",
 ]
