@@ -19,7 +19,9 @@ backend = [
     "hf-xet>=1.1.0",
     "bitsandbytes>=0.45.2",
     "unsloth==2025.8.1",
+    "unsloth-zoo @ git+https://github.com/bradhilton/unsloth-zoo@323cf5e",
     "vllm==0.10.0",
+    "torchtune @ git+https://github.com/pytorch/torchtune.git@2344509cf83bd886538fe3e8263e5145d1afb5c2",
     "trl>=0.19.0",
     "torch>=2.7.0",
     "torchao>=0.9.0",
@@ -48,7 +50,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
-allow-direct-references = false
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/art", "src/mp_actors"]
@@ -93,5 +95,3 @@ dev-dependencies = [
 [tool.uv.sources]
 panza = { git = "https://github.com/corbt/panza.git" }
 sweagent = { git = "https://github.com/bradhilton/SWE-agent" }
-torchtune = { git = "https://github.com/pytorch/torchtune.git", rev = "2344509cf83bd886538fe3e8263e5145d1afb5c2" }
-unsloth-zoo = { git = "https://github.com/bradhilton/unsloth-zoo", rev = "323cf5e" }
