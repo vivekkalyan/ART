@@ -59,14 +59,17 @@ def get_compute_loss_fn(trainer: "GRPOTrainer") -> Callable[..., torch.Tensor]:
             for key, tensor in inputs.items()
         }
 
-        # Unsloth code
-        autocast_dtype = (
-            torch.float16
-            if os.environ.get("ACCELERATE_MIXED_PRECISION", "fp16") == "fp16"
-            else torch.bfloat16
-        )
-        if os.environ.get("UNSLOTH_FORCE_FLOAT32", "0") == "1":
-            autocast_dtype = torch.float16
+        accelerate_mixed_precision = os.environ.get("ACCELERATE_MIXED_PRECISION")
+        force_float32 = os.environ.get("UNSLOTH_FORCE_FLOAT32")
+
+        if (
+            accelerate_mixed_precision is None
+            or accelerate_mixed_precision == "fp16"
+            or force_float32 == "1"
+        ):
+            dtype_for_autocasting = torch.float16
+        else:
+            dtype_for_autocasting = torch.bfloat16
 
         batch_size, seq_len = inputs["tokens"].size()
         attn_bias = calculate_attn_bias(
@@ -75,7 +78,7 @@ def get_compute_loss_fn(trainer: "GRPOTrainer") -> Callable[..., torch.Tensor]:
             trainer.accelerator.device,
             inputs["group_ids"],
             inputs["parent_ids"],
-            autocast_dtype,
+            dtype_for_autocasting,
         )
 
         # Calculate log probabilities
@@ -86,12 +89,12 @@ def get_compute_loss_fn(trainer: "GRPOTrainer") -> Callable[..., torch.Tensor]:
         next_input_ids = shift_tensor(inputs["tokens"], 0)
         chunk_size = _config.get("logprob_calculation_chunk_size", 1024)
         # Assert that sequence length is evenly divisible by the chunk size
-        assert seq_len % chunk_size == 0, (
-            f"Sequence length ({seq_len}) must be evenly divisible by chunk size ({chunk_size})"
-        )
+        assert (
+            seq_len % chunk_size == 0
+        ), f"Sequence length ({seq_len}) must be evenly divisible by chunk size ({chunk_size})"
         os.environ["UNSLOTH_RETURN_HIDDEN_STATES"] = "1"
         new_logprobs, entropies = calculate_logprobs(
-            autocast_dtype,
+            dtype_for_autocasting,
             trainer,
             inputs["tokens"],
             attn_bias,
@@ -106,7 +109,7 @@ def get_compute_loss_fn(trainer: "GRPOTrainer") -> Callable[..., torch.Tensor]:
             return torch.nn.functional.pad(new_logprobs[:, :-1], (1, 0), value=0.0)
         if config.beta > 0.0:
             ref_logprobs, _ = calculate_logprobs(
-                autocast_dtype,
+                dtype_for_autocasting,
                 trainer,
                 inputs["tokens"],
                 attn_bias,
@@ -227,7 +230,7 @@ def calculate_attn_bias(
     device: torch.device,
     group_ids: torch.Tensor,
     parent_ids: torch.Tensor,
-    autocast_dtype: torch.dtype,
+    dtype: torch.dtype,
 ) -> torch.Tensor:
     mask = calculate_mask(batch_size, seq_len, device, group_ids, parent_ids)
     # Use the same dtype as autocast to save memory and avoid dtype conversions
@@ -235,12 +238,12 @@ def calculate_attn_bias(
         mask,
         torch.tensor(
             0.0,
-            dtype=autocast_dtype,
+            dtype=dtype,
             device=device,
         ),
         torch.tensor(
             float("-inf"),
-            dtype=autocast_dtype,
+            dtype=dtype,
             device=device,
         ),
     )
@@ -274,7 +277,7 @@ def calculate_mask(
 
 
 def calculate_logprobs(
-    autocast_dtype: torch.dtype,
+    dtype_for_autocast: torch.dtype,
     trainer: "GRPOTrainer",
     input_ids: torch.Tensor,
     causal_mask: torch.Tensor,
@@ -288,7 +291,6 @@ def calculate_logprobs(
     torch.Tensor, torch.Tensor
 ]:  # Returns (log_probs, entropy) both shape [B, S]
     with (
-        torch.amp.autocast_mode.autocast(device_type="cuda", dtype=autocast_dtype),
         torch.inference_mode() if inference_mode else nullcontext(),
         torch.no_grad() if no_grad else nullcontext(),
         (
@@ -298,6 +300,7 @@ def calculate_logprobs(
             if reference_logprobs
             else nullcontext()
         ),
+        torch.amp.autocast_mode.autocast(device_type="cuda", dtype=dtype_for_autocast),
     ):
         hidden_states = trainer.model(  # type: ignore
             input_ids=input_ids, causal_mask=causal_mask
@@ -335,7 +338,9 @@ def _calculate_logprobs(
         chunk_logits = torch.matmul(chunk_hs, lm_head_t)  # [B, chunk_size, V]
         chunk_selected_logits = torch.gather(
             chunk_logits, dim=-1, index=chunk_input_ids.unsqueeze(-1)
-        ).squeeze(-1)  # [B, chunk_size]
+        ).squeeze(
+            -1
+        )  # [B, chunk_size]
         chunk_logsumexp = torch.logsumexp(chunk_logits, dim=-1)  # [B, chunk_size]
         log_probs[:, i : i + chunk_size] = chunk_selected_logits - chunk_logsumexp
 
