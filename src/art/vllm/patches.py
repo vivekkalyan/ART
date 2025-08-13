@@ -131,18 +131,18 @@ def patch_get_lora_tokenizer_async() -> None:
     import vllm.transformers_utils.tokenizer
     import vllm.transformers_utils.tokenizer_group
 
-    async def _return_nothing(*_, **__) -> None:
+    async def async_noop(*_, **__) -> None:
         return None
 
-    async def get_self_lora_tokenizer_async(self, *args, **kwargs):
+    async def async_get_lora_tokenizer(self, *args, **kwargs):
         return self.tokenizer
 
-    vllm.transformers_utils.tokenizer.get_lora_tokenizer_async = _return_nothing  # type: ignore
+    vllm.transformers_utils.tokenizer.get_lora_tokenizer_async = async_noop  # type: ignore
     vllm.transformers_utils.tokenizer_group.get_lora_tokenizer_async = (  # type: ignore
-        _return_nothing
+        async_noop
     )
     vllm.transformers_utils.tokenizer_group.TokenizerGroup.get_lora_tokenizer_async = (
-        get_self_lora_tokenizer_async  # type: ignore
+        async_get_lora_tokenizer  # type: ignore
     )
 
 
