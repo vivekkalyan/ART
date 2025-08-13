@@ -51,7 +51,6 @@ async def openai_server_task(
     add_lora = engine.add_lora
 
     async def _add_lora(lora_request) -> None:
-
         class LoRARequest:
             def __getattr__(self, name: str) -> Any:
                 if name == "lora_tensors" and not hasattr(lora_request, name):

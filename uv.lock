@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.13' and sys_platform == 'linux'",
@@ -1127,6 +1127,25 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/38/69157d711be575f1b9cf3177b64ef4ade44373fc02839f183fdd98ec2dd6/depyf-0.19.0.tar.gz", hash = "sha256:afed0916b32d141cc90fa6220df01885eda442ca43b297d5050eeb90b4a5cb44", size = 6171405, upload-time = "2025-04-20T08:07:41.224Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/28/4d/1192acbcdc5e843f5e5d51f6e8788f2b60a9fe0b578ac385ded67a0b0b26/depyf-0.19.0-py3-none-any.whl", hash = "sha256:040b35fc0997d49df024b7d094f2a7836f91e9ed02f49982dd37e70aa3285ad5", size = 39034, upload-time = "2025-04-20T08:07:37.036Z" },
+]
+
+[[package]]
+name = "diffusers"
+version = "0.34.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "filelock" },
+    { name = "huggingface-hub" },
+    { name = "importlib-metadata" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "regex" },
+    { name = "requests" },
+    { name = "safetensors" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/34/01/eee276cb1ffa1528d3fac8c8382c32d0deef7f089baeefbee254bbbc0a8f/diffusers-0.34.0.tar.gz", hash = "sha256:25d84e779781fb8a78de22ea0f732aac32b619c65548a04e520d0b55e29a54e7", size = 3083860, upload-time = "2025-06-24T14:56:57.438Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f8/e0/d5af850081d479e5bb6f6f310e98e1e2ea6cce9e5d67e2b7978d5690497e/diffusers-0.34.0-py3-none-any.whl", hash = "sha256:b0f642cd57756357bad5d23fe95b61f2e6e30321c93f1302cca6d832a01e6d33", size = 3774402, upload-time = "2025-06-24T14:56:55.089Z" },
 ]
 
 [[package]]
@@ -3486,7 +3505,6 @@ dependencies = [
     { name = "litellm" },
     { name = "openai" },
     { name = "typer" },
-    { name = "unsloth" },
     { name = "weave" },
 ]
 
@@ -3555,8 +3573,7 @@ requires-dist = [
     { name = "trl", marker = "extra == 'backend'", specifier = "==0.20.0" },
     { name = "trl", marker = "extra == 'backend'", specifier = ">=0.19.0" },
     { name = "typer", specifier = ">=0.15.2" },
-    { name = "unsloth", git = "https://github.com/unslothai/unsloth.git?rev=7dd4e1dd5d9fceeeb08612e0716f041bee8144ee" },
-    { name = "unsloth", marker = "extra == 'backend'", git = "https://github.com/unslothai/unsloth.git?rev=7dd4e1dd5d9fceeeb08612e0716f041bee8144ee" },
+    { name = "unsloth", marker = "extra == 'backend'", specifier = "==2025.8.4" },
     { name = "unsloth-zoo", marker = "extra == 'backend'", specifier = "==2025.8.3" },
     { name = "vllm", marker = "extra == 'backend'", specifier = "==0.10.0" },
     { name = "wandb", marker = "extra == 'backend'", specifier = ">=0.19.8" },
@@ -6580,7 +6597,36 @@ wheels = [
 [[package]]
 name = "unsloth"
 version = "2025.8.4"
-source = { git = "https://github.com/unslothai/unsloth.git?rev=7dd4e1dd5d9fceeeb08612e0716f041bee8144ee#7dd4e1dd5d9fceeeb08612e0716f041bee8144ee" }
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "accelerate" },
+    { name = "bitsandbytes" },
+    { name = "datasets" },
+    { name = "diffusers" },
+    { name = "hf-transfer" },
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "peft" },
+    { name = "protobuf" },
+    { name = "psutil" },
+    { name = "sentencepiece" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+    { name = "transformers" },
+    { name = "triton", marker = "sys_platform == 'linux'" },
+    { name = "triton-windows", marker = "sys_platform == 'win32'" },
+    { name = "trl" },
+    { name = "tyro" },
+    { name = "unsloth-zoo" },
+    { name = "wheel" },
+    { name = "xformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/50/f6/b176a1253f680fa2368c02d65c1692a5d9d33fa7f53780d4e1a166371e73/unsloth-2025.8.4.tar.gz", hash = "sha256:37d9519f2ea1c28a710352b87b4eac13a537ca22b98b81684cf189b4a082830f", size = 264559, upload-time = "2025-08-08T18:53:20.908Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/9f/8a158ce711be3e409b31b692c43dc6cb84118f4d47fc350665c2151560a3/unsloth-2025.8.4-py3-none-any.whl", hash = "sha256:a786a86d5b12ed60c69c994f036b6ee8746d502c8bfa47f2440567b8160622d4", size = 306847, upload-time = "2025-08-08T18:53:17.036Z" },
+]
 
 [[package]]
 name = "unsloth-zoo"
@@ -7084,12 +7130,13 @@ name = "xformers"
 version = "0.0.31"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "sys_platform == 'linux'" },
-    { name = "torch", marker = "sys_platform == 'linux'" },
+    { name = "numpy" },
+    { name = "torch" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/35/91c172a57681e1c03de5ad1ca654dc87c282279b941052ed04e616ae5bcd/xformers-0.0.31.tar.gz", hash = "sha256:3fccb159c6327c13fc1b08f8b963c2779ca526e2e50755dee9bcc1bac67d20c6", size = 12102740, upload-time = "2025-06-25T15:12:10.241Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ff/e3/ee90c62a3235152d4ea8e983a5eb7ac00b10582fee86aaadb11571c1ecba/xformers-0.0.31-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:50aedaea82a38d7d28631f77617d1ed1f6f37c60bdc4bf167a69cbc0e39cee76", size = 117057673, upload-time = "2025-06-25T15:11:59.775Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/66/7b60ec52da94a0da3383ba385b43e42cee8854c001b5cb6cf98a909665c8/xformers-0.0.31-cp39-abi3-win_amd64.whl", hash = "sha256:23331bdb9831ba0df96f55258537ca0df7ad888efc75cea97a0de79b5e2291c4", size = 100228305, upload-time = "2025-06-25T15:12:05.924Z" },
 ]
 
 [[package]]
