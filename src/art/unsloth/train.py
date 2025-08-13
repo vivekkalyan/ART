@@ -160,7 +160,16 @@ def get_compute_loss_fn(trainer: "GRPOTrainer") -> Callable[..., torch.Tensor]:
             torch.clip(prob_ratio, 1 - epsilon, 1 + epsilon_high) * advantages,
         )
         if upper_bound := _config.get("truncated_importance_sampling", None):
-            policy_loss *= torch.clamp(prob_ratio, max=upper_bound)
+            if "original_logprobs" in inputs:
+                original_logprobs = shift_tensor(inputs["original_logprobs"], 0.0)
+                original_logprobs = torch.where(
+                    torch.isnan(original_logprobs),
+                    new_logprobs.detach(),
+                    original_logprobs,
+                )
+                logprob_diff = old_logprobs - original_logprobs
+                prob_ratio = torch.exp(logprob_diff)
+            policy_loss *= torch.clamp(prob_ratio, max=upper_bound).detach()
         if ref_logprobs is not None:
             kl_div = (
                 torch.exp(ref_logprobs - new_logprobs)
