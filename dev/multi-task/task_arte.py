@@ -57,6 +57,9 @@ class TaskArtE(Task[SyntheticQuery]):
     async def run(
         self, model: art.TrainableModel, scenario: SyntheticQuery, num_samples: int = 1
     ) -> art.TrajectoryGroup:
+        # Ensure database exists before each run
+        # If database already exists, it will not regenerate the database
+        generate_database()
 
         class TaskProjectConfig(BaseModel):
             max_turns: int = 10
