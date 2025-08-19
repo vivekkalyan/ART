@@ -4,7 +4,7 @@ import art
 from task import Task
 from config import TaskTrainConfig
 from summarizer import rollout, SummarizerScenario
-from summarizer.load_documents import load_documents, Document
+from summarizer.load_documents import load_documents_from_cleaned, Document
 
 
 class TaskSummary(Task[Document]):
@@ -43,7 +43,7 @@ class TaskSummary(Task[Document]):
         """
         # Load documents only once
         if self._val_documents is None or self._train_documents is None:
-            self._val_documents, self._train_documents = load_documents()
+            self._val_documents, self._train_documents = load_documents_from_cleaned()
 
         if split == "train":
             yield from self._train_documents
@@ -57,7 +57,7 @@ class TaskSummary(Task[Document]):
         Pre-training setup. Load documents to ensure they're cached.
         """
         if self._val_documents is None or self._train_documents is None:
-            self._val_documents, self._train_documents = load_documents()
+            self._val_documents, self._train_documents = load_documents_from_cleaned()
 
     async def run(
         self, model: art.TrainableModel, scenario: Document, num_samples: int = 1
