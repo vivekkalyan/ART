@@ -301,6 +301,7 @@ class TaskTrainer:
     async def _evaluate_task(self, task: Task, val_scenarios: List[Any], step: int):
         """Evaluate model on a task's validation set."""
         print(f"Evaluating {task.name} at step {step}")
+        task.pre_train()
 
         # In fast-dev-run, only evaluate on 1 scenario
         if self.config.fast_dev_run:
