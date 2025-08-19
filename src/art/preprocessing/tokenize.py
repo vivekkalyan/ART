@@ -148,16 +148,10 @@ def tokenize_trajectory(
             tools=history.tools,  # type: ignore
         ),
     )
-    sentinal_start_token_id = max(
+    sentinal_token_id = max(
         set(range(cast(int, tokenizer.vocab_size))) - set(original_token_ids)
     )
-    sentinal_end_token_id = max(
-        set(range(cast(int, tokenizer.vocab_size)))
-        - set(original_token_ids)
-        - {sentinal_start_token_id}
-    )
-    sentinal_start_token = tokenizer.decode(sentinal_start_token_id)
-    sentinal_end_token = tokenizer.decode(sentinal_end_token_id)
+    sentinal_token = tokenizer.decode(sentinal_token_id)
     token_ids = cast(
         list[int],
         tokenizer.apply_chat_template(
@@ -170,7 +164,7 @@ def tokenize_trajectory(
                         and not message_or_choice["role"] == "assistant"
                         else {
                             "role": "assistant",
-                            "content": f"{sentinal_start_token}{message_or_choice.get('content', None) if isinstance(message_or_choice, dict) else message_or_choice.message.content or ''}{sentinal_end_token}",
+                            "content": sentinal_token,
                         }
                     )
                     for message_or_choice in messages_and_choices
@@ -187,12 +181,18 @@ def tokenize_trajectory(
             and not message_or_choice["role"] == "assistant"
         ):
             continue
-        start = token_ids.index(sentinal_start_token_id)
-        end = token_ids.index(sentinal_end_token_id) + 1
+        start = token_ids.index(sentinal_token_id)
+        end = start + 1
         if isinstance(message_or_choice, dict):
-            token_ids[start:end] = token_ids[start + 1 : end - 1]
-            logprobs[start:end] = [float("nan")] * (end - start - 2)
-            assistant_mask[start:end] = [1] * (end - start - 2)
+            content = message_or_choice.get("content")
+            assert isinstance(content, str)
+            content_token_ids = tokenizer.encode(
+                content,
+                add_special_tokens=False,
+            )
+            token_ids[start:end] = content_token_ids
+            logprobs[start:end] = [float("nan")] * len(content_token_ids)
+            assistant_mask[start:end] = [1] * len(content_token_ids)
         else:
             choice = message_or_choice
             assert choice.logprobs or allow_training_without_logprobs, (
