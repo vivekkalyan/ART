@@ -52,3 +52,35 @@ def load_documents() -> Tuple[List[Document], List[Document]]:
     print(f"Val set size: {len(val_documents)}")
 
     return val_documents, train_documents
+
+
+def load_documents_from_cleaned() -> Tuple[List[Document], List[Document]]:
+    import json
+
+    all_documents: List[Document] = []
+
+    cleaned_path = os.path.join(os.path.dirname(__file__), "../../data/cleaned.jsonl")
+
+    with open(cleaned_path, "r") as f:
+        for line in f:
+            data = json.loads(line)
+            doc = Document(
+                document_text=data["document_text"],
+                questions=[Question(q=q["q"], a=q["a"]) for q in data["questions"]],
+            )
+            all_documents.append(doc)
+
+    random.seed(80)
+    random.shuffle(all_documents)
+
+    val_size = int(os.getenv("VAL_SIZE", 91))
+    train_size = int(os.getenv("TRAIN_SIZE", 3500))
+
+    val_documents = all_documents[:val_size]
+    train_documents = all_documents[val_size : val_size + train_size]
+
+    print(f"Loaded {len(all_documents)} documents from cleaned dataset")
+    print(f"Train set size: {len(train_documents)}")
+    print(f"Val set size: {len(val_documents)}")
+
+    return val_documents, train_documents
