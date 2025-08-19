@@ -1,5 +1,6 @@
 import asyncio
 import os
+from collections import defaultdict
 from contextlib import nullcontext
 from typing import TYPE_CHECKING, Callable, cast
 
@@ -26,6 +27,14 @@ async def train(
     _log = trainer.log
     trainer.compute_loss = get_compute_loss_fn(trainer)
     trainer.log = get_log_fn(trainer, results_queue)
+    # Ensure we have a metrics container in the expected format
+    try:
+        is_dict = isinstance(getattr(trainer, "_metrics", None), dict)
+        is_train_dict = is_dict and isinstance(trainer._metrics.get("train"), dict)
+    except Exception:
+        is_train_dict = False
+    if not is_train_dict:
+        trainer._metrics = {"train": defaultdict(list)}
     try:
         trainer.train()
     finally:
