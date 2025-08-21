@@ -86,6 +86,8 @@ class TaskTrainer:
 
         if self.config.mixing_strategy == "sequential":
             await self._train_sequential()
+        elif self.config.mixing_strategy == "interleaved":
+            await self._train_interleaved()
         else:
             raise ValueError(f"Unknown mixing strategy: {self.config.mixing_strategy}")
 
@@ -206,6 +208,170 @@ class TaskTrainer:
                     await self._evaluate_all_tasks(
                         all_val_datasets, f"{task.name}_complete"
                     )
+
+            # Final evaluation across all tasks
+            print("\n=== Final Evaluation ===")
+            await self._evaluate_all_tasks(all_val_datasets, "final")
+
+    async def _train_interleaved(self):
+        """Train on multiple tasks with interleaved batches."""
+        print(
+            f"Starting interleaved training with {self.config.interleave_steps} steps per task"
+        )
+
+        with LocalBackend() as backend:
+            await self.model.register(backend)
+            print(f"Model configuration: {self.model.model_dump()}")
+
+            if self.config.fast_dev_run:
+                print("\nFast dev run mode: Running 1 cycle through all tasks\n")
+
+            # Load all validation datasets upfront
+            all_val_datasets = {}
+            for task in self.tasks:
+                config = self.task_configs[task.name]
+                print(f"Loading validation data for {task.name}...")
+                val_scenarios = list(task.get_dataset("test"))
+                if config.val_set_size and len(val_scenarios) > config.val_set_size:
+                    val_scenarios = val_scenarios[: config.val_set_size]
+                all_val_datasets[task.name] = val_scenarios
+                print(f"  {task.name} validation size: {len(val_scenarios)}")
+
+            # Load training data and create iterators for all tasks
+            task_iterators = {}
+            task_train_data = {}
+            total_steps_per_epoch = 0
+
+            for task in self.tasks:
+                config = self.task_configs[task.name]
+                print(f"Loading training data for {task.name}...")
+                train_scenarios = list(task.get_dataset("train"))
+
+                if (
+                    config.training_dataset_size
+                    and len(train_scenarios) > config.training_dataset_size
+                ):
+                    if config.training_dataset_seed is not None:
+                        random.seed(config.training_dataset_seed)
+                    train_scenarios = random.sample(
+                        train_scenarios, config.training_dataset_size
+                    )
+
+                task_train_data[task.name] = train_scenarios
+                print(f"  {task.name} training size: {len(train_scenarios)}")
+
+                # Calculate steps for this task
+                steps_per_epoch = len(train_scenarios) // config.groups_per_step
+                total_steps_per_epoch += steps_per_epoch * config.num_epochs
+
+            # Initialize iterators for each task
+            for task in self.tasks:
+                config = self.task_configs[task.name]
+                task_iterators[task.name] = iterate_dataset(
+                    task_train_data[task.name],
+                    groups_per_step=config.groups_per_step,
+                    num_epochs=config.num_epochs,
+                    use_tqdm=False,  # We'll manage progress ourselves
+                )
+
+            # Interleaved training loop
+            global_step = 0
+            task_index = 0
+            steps_since_eval = 0
+            completed_tasks = set()
+
+            # Determine evaluation frequency (use minimum eval_steps across tasks)
+            eval_frequency = min(
+                self.task_configs[task.name].eval_steps for task in self.tasks
+            )
+
+            while len(completed_tasks) < len(self.tasks):
+                # Get current task
+                current_task = self.tasks[task_index]
+
+                if current_task.name in completed_tasks:
+                    # Skip completed tasks
+                    task_index = (task_index + 1) % len(self.tasks)
+                    continue
+
+                config = self.task_configs[current_task.name]
+                iterator = task_iterators[current_task.name]
+
+                print(
+                    f"\n--- Training on {current_task.name} "
+                    f"(global step {global_step}) ---"
+                )
+
+                # Train for interleave_steps batches on this task
+                steps_on_task = 0
+                for _ in range(self.config.interleave_steps):
+                    try:
+                        batch = next(iterator)
+                    except StopIteration:
+                        # This task is complete
+                        completed_tasks.add(current_task.name)
+                        print(f"Task {current_task.name} training complete")
+                        break
+
+                    # Evaluate all tasks at regular intervals
+                    should_eval = steps_since_eval >= eval_frequency or (
+                        self.config.fast_dev_run and global_step == 0
+                    )
+                    if should_eval:
+                        print(
+                            f"\n--- Evaluating all tasks at global step {global_step} ---"
+                        )
+                        await self._evaluate_all_tasks(all_val_datasets, global_step)
+                        steps_since_eval = 0
+
+                    # Generate and train on trajectory groups
+                    groups = await self._generate_trajectory_groups(
+                        current_task, batch.items, config
+                    )
+
+                    if not groups:
+                        print(
+                            f"WARNING: No valid trajectory groups at step {global_step}, skipping"
+                        )
+                        continue
+
+                    # Filter groups if configured
+                    if config.minimum_reward_std_dev > 0:
+                        groups = self._filter_groups_by_std_dev(
+                            groups, config.minimum_reward_std_dev, global_step
+                        )
+                        if not groups:
+                            print(
+                                f"WARNING: All groups filtered out at step {global_step}, skipping"
+                            )
+                            continue
+
+                    # Train the model
+                    await self.model.train(
+                        groups,
+                        config=art.TrainConfig(learning_rate=config.learning_rate),
+                        _config=art.dev.TrainConfig(
+                            allow_training_without_logprobs=config.allow_training_without_logprobs,
+                            scale_rewards=config.scale_rewards,
+                            importance_sampling_level=config.importance_sampling_level,
+                            advantage_balance=config.advantage_balance,
+                            epsilon=config.epsilon,
+                            epsilon_high=config.epsilon_high,
+                        ),
+                    )
+
+                    global_step += 1
+                    steps_since_eval += 1
+                    steps_on_task += 1
+
+                    # Exit early in fast-dev-run mode after one cycle
+                    if self.config.fast_dev_run and task_index == len(self.tasks) - 1:
+                        print("Fast dev run: Completed one cycle through all tasks")
+                        completed_tasks = set(task.name for task in self.tasks)
+                        break
+
+                # Move to next task
+                task_index = (task_index + 1) % len(self.tasks)
 
             # Final evaluation across all tasks
             print("\n=== Final Evaluation ===")
