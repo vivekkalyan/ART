@@ -208,9 +208,11 @@ def create_performance_jump_chart():
 
 if __name__ == "__main__":
     import os
+    from pathlib import Path
 
-    # Create output directory
-    output_dir = "/Users/vivek/openpipe/multi-task-charts"
+    # Create output directory relative to the script location
+    script_dir = Path(__file__).parent
+    output_dir = script_dir.parent / "assets"
     os.makedirs(output_dir, exist_ok=True)
 
     # Generate all charts
@@ -219,7 +221,7 @@ if __name__ == "__main__":
     # Main comparison chart
     fig1 = create_performance_comparison_chart()
     fig1.savefig(
-        os.path.join(output_dir, "multitask_performance_comparison.png"),
+        output_dir / "multitask_performance_comparison.png",
         dpi=300,
         bbox_inches="tight",
     )
@@ -228,7 +230,7 @@ if __name__ == "__main__":
     # Performance jump emphasis chart
     fig2 = create_performance_jump_chart()
     fig2.savefig(
-        os.path.join(output_dir, "multitask_performance_jump.png"),
+        output_dir / "multitask_performance_jump.png",
         dpi=300,
         bbox_inches="tight",
     )
