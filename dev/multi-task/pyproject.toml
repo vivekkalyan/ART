@@ -1,0 +1,28 @@
+[project]
+name = "multi-task"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "openpipe-art",
+  "art-e",
+  "tau-bench",
+  "summarizer-rl",
+  "python-dotenv>=1.1.1",
+  "skypilot[runpod]>=0.9.3",
+  "datasets>=3.6.0",
+  "async-lru>=2.0.5",
+  "semver>=3.0.4",
+]
+
+[tool.uv.sources]
+openpipe-art = { path = "../../", editable = true }
+art-e = { path = "../art-e/", editable = true }
+tau-bench = { path = "../tau-bench/", editable = true }
+summarizer-rl = { path = "../../examples/Summary-RL/", editable = true }
+
+[tool.uv]
+override-dependencies = [
+    "bitsandbytes==0.46.1; sys_platform == 'linux'",
+    "xformers; sys_platform == 'linux'",
+    "vllm==0.10.0; sys_platform == 'linux'",
+]
